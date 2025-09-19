@@ -84,6 +84,52 @@ export const AuthPage = () => {
     }
   };
 
+  const handleDemoLogin = async () => {
+    setLoading(true);
+    
+    try {
+      // First try to sign up the demo user
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: "admin@school.edu",
+        password: "password123",
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            first_name: "Demo",
+            last_name: "Admin",
+            role: "admin",
+          }
+        }
+      });
+
+      // If user already exists, try to sign in
+      if (signUpError?.message?.includes("already registered")) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: "admin@school.edu",
+          password: "password123",
+        });
+
+        if (signInError) throw signInError;
+      } else if (signUpError) {
+        throw signUpError;
+      }
+
+      toast({
+        title: "Demo Access Granted!",
+        description: "Welcome to the AI Student Risk Assessment System.",
+        className: "neon-glow-cyan",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Demo Login Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
       {/* Neural Network Background */}
@@ -163,8 +209,21 @@ export const AuthPage = () => {
                   )}
                 </Button>
               </form>
-              <div className="mt-4 text-sm text-center text-muted-foreground">
-                <p className="terminal-text">Demo: admin@school.edu / password123</p>
+              <div className="mt-4 space-y-3">
+                <Button 
+                  type="button"
+                  onClick={handleDemoLogin}
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 neon-glow-purple"
+                  disabled={loading}
+                >
+                  <div className="flex items-center space-x-2">
+                    <span>🚀</span>
+                    <span>Quick Demo Access</span>
+                  </div>
+                </Button>
+                <div className="text-sm text-center text-muted-foreground">
+                  <p className="terminal-text">Or manually use: admin@school.edu / password123</p>
+                </div>
               </div>
             </TabsContent>
 

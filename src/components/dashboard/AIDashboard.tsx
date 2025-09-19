@@ -3,10 +3,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardHeader } from "./DashboardHeader";
 import { MetricsOverview } from "./MetricsOverview";
-import { RiskMatrix } from "./RiskMatrix";
+import { StudentTable } from "./StudentTable";
+import { N8nIntegration } from "./N8nIntegration";
+import { RiskVisualization } from "./RiskVisualization";
+import { NotificationManager } from "./NotificationManager";
 import { AIInsights } from "./AIInsights";
-import { RecentAlerts } from "./RecentAlerts";
-import { StudentList } from "./StudentList";
 
 interface Profile {
   id: string;
@@ -96,21 +97,24 @@ export const AIDashboard = ({ user }: AIDashboardProps) => {
       <DashboardHeader user={user} profile={profile} />
       
       <main className="container mx-auto px-6 py-8 space-y-8">
-        {/* Metrics Overview */}
+        {/* Top Section - Overview Stats */}
         <MetricsOverview students={students} />
         
-        {/* Main Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column */}
-          <div className="lg:col-span-2 space-y-8">
-            <RiskMatrix students={students} />
-            <StudentList students={students} />
+        {/* Main Section - Student Table */}
+        <StudentTable students={students} />
+        
+        {/* Grid Layout for Additional Features */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Risk Visualization */}
+          <div className="space-y-8">
+            <RiskVisualization students={students} />
           </div>
           
-          {/* Right Column */}
+          {/* n8n Integration & Notifications */}
           <div className="space-y-8">
             <AIInsights students={students} />
-            <RecentAlerts />
+            <N8nIntegration />
+            <NotificationManager />
           </div>
         </div>
       </main>
