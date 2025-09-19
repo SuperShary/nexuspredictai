@@ -88,41 +88,65 @@ export const AuthPage = () => {
     setLoading(true);
     
     try {
-      // First try to sign up the demo user
-      const { error: signUpError } = await supabase.auth.signUp({
+      // First try to sign in directly (user might already exist)
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: "admin@school.edu",
         password: "password123",
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            first_name: "Demo",
-            last_name: "Admin",
-            role: "admin",
-          }
-        }
       });
 
-      // If user already exists, try to sign in
-      if (signUpError?.message?.includes("already registered")) {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: "admin@school.edu",
-          password: "password123",
+      // If sign in successful, we're done
+      if (!signInError) {
+        toast({
+          title: "Demo Access Granted!",
+          description: "Welcome to the AI Student Risk Assessment System.",
+          className: "neon-glow-cyan",
         });
-
-        if (signInError) throw signInError;
-      } else if (signUpError) {
-        throw signUpError;
+        return;
       }
 
-      toast({
-        title: "Demo Access Granted!",
-        description: "Welcome to the AI Student Risk Assessment System.",
-        className: "neon-glow-cyan",
-      });
+      // If user doesn't exist, create them
+      if (signInError?.message?.includes("Invalid login credentials")) {
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: "admin@school.edu",
+          password: "password123",
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              first_name: "Demo",
+              last_name: "Admin",
+              role: "admin",
+            }
+          }
+        });
+
+        if (signUpError) {
+          // If sign up failed because user already exists, try to sign in again
+          if (signUpError.message?.includes("already registered")) {
+            const { error: retrySignInError } = await supabase.auth.signInWithPassword({
+              email: "admin@school.edu",
+              password: "password123",
+            });
+            
+            if (retrySignInError) throw retrySignInError;
+          } else {
+            throw signUpError;
+          }
+        }
+
+        toast({
+          title: "Demo Account Created!",
+          description: "Demo user created and signed in successfully.",
+          className: "neon-glow-cyan",
+        });
+      } else {
+        throw signInError;
+      }
+
     } catch (error: any) {
+      console.error("Demo login error:", error);
       toast({
         title: "Demo Login Failed",
-        description: error.message,
+        description: `Error: ${error.message}. Please try the manual sign-up option.`,
         variant: "destructive",
       });
     } finally {
@@ -221,8 +245,9 @@ export const AuthPage = () => {
                     <span>Quick Demo Access</span>
                   </div>
                 </Button>
-                <div className="text-sm text-center text-muted-foreground">
-                  <p className="terminal-text">Or manually use: admin@school.edu / password123</p>
+                <div className="text-sm text-center text-muted-foreground space-y-2">
+                  <p className="terminal-text">Demo Credentials: admin@school.edu / password123</p>
+                  <p className="text-xs text-yellow-400">💡 Use Quick Demo Access button above for instant login!</p>
                 </div>
               </div>
             </TabsContent>
