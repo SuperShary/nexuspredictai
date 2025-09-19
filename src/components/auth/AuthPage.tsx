@@ -90,7 +90,7 @@ export const AuthPage = () => {
     try {
       // First try to sign in directly (user might already exist)
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: "admin@school.edu",
+        email: "superrshary@gmail.com",
         password: "password123",
       });
 
@@ -107,7 +107,7 @@ export const AuthPage = () => {
       // If user doesn't exist, create them
       if (signInError?.message?.includes("Invalid login credentials")) {
         const { error: signUpError } = await supabase.auth.signUp({
-          email: "admin@school.edu",
+          email: "superrshary@gmail.com",
           password: "password123",
           options: {
             emailRedirectTo: `${window.location.origin}/`,
@@ -123,7 +123,7 @@ export const AuthPage = () => {
           // If sign up failed because user already exists, try to sign in again
           if (signUpError.message?.includes("already registered")) {
             const { error: retrySignInError } = await supabase.auth.signInWithPassword({
-              email: "admin@school.edu",
+              email: "superrshary@gmail.com",
               password: "password123",
             });
             
@@ -246,7 +246,7 @@ export const AuthPage = () => {
                   </div>
                 </Button>
                 <div className="text-sm text-center text-muted-foreground space-y-2">
-                  <p className="terminal-text">Demo Credentials: admin@school.edu / password123</p>
+                  <p className="terminal-text">Demo Credentials: superrshary@gmail.com / password123</p>
                   <p className="text-xs text-yellow-400">💡 Use Quick Demo Access button above for instant login!</p>
                 </div>
               </div>
