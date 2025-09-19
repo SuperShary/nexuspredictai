@@ -13,6 +13,11 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        'sans': ['Inter', 'sans-serif'],
+        'heading': ['Space Grotesk', 'sans-serif'],
+        'mono': ['JetBrains Mono', 'monospace'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -47,15 +52,22 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
+        // AI Theme Colors
+        neon: {
+          cyan: "hsl(var(--neon-cyan))",
+          purple: "hsl(var(--neon-purple))",
+        },
+        ai: {
+          primary: "hsl(var(--ai-primary))",
+          secondary: "hsl(var(--ai-secondary))",
+          success: "hsl(var(--ai-success))",
+          warning: "hsl(var(--ai-warning))",
+          danger: "hsl(var(--ai-danger))",
+        },
+        space: {
+          black: "hsl(var(--space-black))",
+          dark: "hsl(var(--space-dark))",
+          medium: "hsl(var(--space-medium))",
         },
       },
       borderRadius: {
@@ -80,10 +92,47 @@ export default {
             height: "0",
           },
         },
+        "gradient-shift": {
+          "0%, 100%": { "background-position": "0% 50%" },
+          "50%": { "background-position": "100% 50%" },
+        },
+        "pulse-glow": {
+          "0%, 100%": { 
+            opacity: "0.5",
+            transform: "scale(1)",
+          },
+          "50%": { 
+            opacity: "1",
+            transform: "scale(1.2)",
+          },
+        },
+        "quantum-spin": {
+          "0%": { transform: "rotate(0deg) scale(1)" },
+          "25%": { transform: "rotate(90deg) scale(1.1)" },
+          "50%": { transform: "rotate(180deg) scale(1)" },
+          "75%": { transform: "rotate(270deg) scale(1.1)" },
+          "100%": { transform: "rotate(360deg) scale(1)" },
+        },
+        "float": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        "neural-pulse": {
+          "0%, 100%": { opacity: "0.4", transform: "scale(0.95)" },
+          "50%": { opacity: "1", transform: "scale(1.05)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "gradient-shift": "gradient-shift 3s ease infinite",
+        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "quantum-spin": "quantum-spin 4s ease-in-out infinite",
+        "float": "float 3s ease-in-out infinite",
+        "neural-pulse": "neural-pulse 2.5s ease-in-out infinite",
+      },
+      backdropBlur: {
+        xs: '2px',
       },
     },
   },
