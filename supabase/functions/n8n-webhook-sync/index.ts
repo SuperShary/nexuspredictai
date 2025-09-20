@@ -94,45 +94,112 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting automated n8n webhook sync...');
+    console.log('Starting n8n webhook sync...');
     
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Your n8n webhook URL
-    const webhookUrl = 'https://n8n.srv872880.hstgr.cloud/webhook-test/incomingdata';
-    
-    console.log('Calling n8n webhook:', webhookUrl);
-    
-    // Call the n8n webhook to get fresh data
-    const webhookResponse = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Supabase-Edge-Function/1.0',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({
-        trigger: 'automated_sync',
-        timestamp: new Date().toISOString(),
-        source: 'supabase_cron',
-        request_data: true
-      })
-    });
+    // Read optional payload from caller
+    let payload: any = {};
+    try {
+      payload = await req.json();
+    } catch (_) {
+      payload = {};
+    }
+    const trigger = payload?.trigger ?? 'automated_sync';
+    const customUrl: string | undefined = payload?.custom_webhook_url;
+    const testMode: boolean = !!payload?.test_mode;
+
+    const defaultWebhook = 'https://n8n.srv872880.hstgr.cloud/webhook-test/incomingdata';
+    const targetUrl = customUrl || defaultWebhook;
+
+    // Helper to call webhook with GET/POST fallback and tolerant parsing
+    const callWebhook = async (url: string, preferGet = false) => {
+      const headers: Record<string, string> = {
+        'Accept': 'application/json, text/plain;q=0.9, */*;q=0.8',
+        'User-Agent': 'Supabase-Edge-Function/1.0'
+      };
+
+      let res: Response | null = null;
+      try {
+        if (preferGet) {
+          res = await fetch(url, { method: 'GET', headers });
+          if (!res.ok && res.status === 405) {
+            // Try POST if GET not allowed
+            res = await fetch(url, {
+              method: 'POST',
+              headers: { ...headers, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ trigger, source: 'supabase_edge', timestamp: new Date().toISOString(), request_data: true })
+            });
+          }
+        } else {
+          // Try POST first
+          res = await fetch(url, {
+            method: 'POST',
+            headers: { ...headers, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ trigger, source: 'supabase_edge', timestamp: new Date().toISOString(), request_data: true })
+          });
+          if (!res.ok && res.status === 405) {
+            // Fallback to GET
+            res = await fetch(url, { method: 'GET', headers });
+          }
+        }
+      } catch (err) {
+        console.error('Network error calling webhook:', err);
+        throw err;
+      }
+
+      const contentType = res.headers.get('content-type') || '';
+      let data: any = null;
+      let textPreview = '';
+      try {
+        if (contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          textPreview = await res.text();
+        }
+      } catch (e) {
+        console.warn('Failed to parse webhook response body');
+      }
+
+      return { res, data, textPreview, contentType };
+    };
+
+    // Prefer GET when testing/custom to match n8n "Test URL" behavior
+    const preferGet = trigger === 'custom_webhook' || trigger === 'manual_test' || testMode;
+    console.log('Calling n8n webhook:', targetUrl, 'preferGet=', preferGet, 'trigger=', trigger);
+    const { res: webhookResponse, data: webhookData, textPreview, contentType } = await callWebhook(targetUrl, preferGet);
 
     console.log('Webhook response status:', webhookResponse.status);
     console.log('Webhook response headers:', Object.fromEntries(webhookResponse.headers.entries()));
 
+    // For simple manual tests or custom URL triggers, just return status and preview
+    if (trigger === 'custom_webhook' || trigger === 'manual_test') {
+      return new Response(JSON.stringify({
+        success: webhookResponse.ok,
+        status: webhookResponse.status,
+        contentType,
+        preview: textPreview?.slice(0, 500) || (webhookData ? JSON.stringify(webhookData).slice(0, 500) : ''),
+        message: webhookResponse.ok ? 'Webhook reached successfully' : 'Webhook returned non-OK status'
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: webhookResponse.ok ? 200 : 502 });
+    }
+
     if (!webhookResponse.ok) {
-      const errorText = await webhookResponse.text();
+      const errorText = textPreview || 'Unknown error';
       console.error('Webhook error response:', errorText);
       throw new Error(`Webhook call failed: ${webhookResponse.status} ${webhookResponse.statusText} - ${errorText}`);
     }
 
-    const webhookData = await webhookResponse.json();
-    console.log('Received data from n8n webhook:', webhookData);
+    // If no JSON payload, skip data processing and just acknowledge
+    if (!webhookData || typeof webhookData !== 'object') {
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Webhook responded without JSON payload; skipping data import',
+        status: webhookResponse.status,
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     // Process different types of data from webhook
     let studentsUpdated = 0;
