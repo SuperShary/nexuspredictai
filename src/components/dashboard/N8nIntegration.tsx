@@ -164,46 +164,37 @@ export const N8nIntegration = () => {
     setIsTestingWebhook(true);
     
     try {
-      const response = await fetch("https://n8n.srv872880.hstgr.cloud/webhook-test/incomingdata", {
-        method: "POST",
+      // Route through our edge function instead of direct browser request
+      const response = await fetch('https://zcinbxtkdydrkyflpiui.supabase.co/functions/v1/n8n-webhook-sync', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjaW5ieHRrZHlkcmt5ZmxwaXVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4MzE4ODIsImV4cCI6MjA3MzQwNzg4Mn0.o0-LT81lQmFmSLV95RtDsYUtZbIBo4y-CPQr548iadU`
         },
-        mode: "no-cors",
         body: JSON.stringify({
+          trigger: 'manual_test',
           timestamp: new Date().toISOString(),
-          triggered_from: "manual_test",
-          action: "test_workflow",
-          test_data: {
-            students: [
-              {
-                student_id: "TEST001",
-                grade_level: "10",
-                section: "A",
-                risk_score: 75,
-                risk_level: "caution"
-              }
-            ],
-            attendance: [
-              {
-                student_id: "TEST001",
-                date: new Date().toISOString().split('T')[0],
-                status: "present"
-              }
-            ]
-          }
-        }),
+          source: 'webhook_test',
+          test_mode: true
+        })
       });
 
-      toast({
-        title: "Test Webhook Sent!",
-        description: "Check your n8n workflow to see if it received the test data.",
-        className: "neon-glow-cyan",
-      });
+      const result = await response.json();
+      
+      if (response.ok) {
+        toast({
+          title: "Test Webhook Successful!",
+          description: `Your n8n workflow should have received the webhook call. Check your n8n execution history.`,
+          className: "neon-glow-cyan",
+        });
+      } else {
+        throw new Error(result.error || 'Test webhook failed');
+      }
     } catch (error) {
+      console.error('Test webhook error:', error);
       toast({
-        title: "Test Failed",
-        description: "Could not send test webhook. Check console for details.",
+        title: "Test Webhook Failed",
+        description: "Could not reach your n8n webhook. Check if your n8n server is running and accessible.",
         variant: "destructive",
       });
     } finally {
@@ -224,28 +215,37 @@ export const N8nIntegration = () => {
     setIsTriggering(true);
     
     try {
-      const response = await fetch(webhookUrl, {
-        method: "POST",
+      // Also route custom webhook through our edge function for better reliability
+      const response = await fetch('https://zcinbxtkdydrkyflpiui.supabase.co/functions/v1/n8n-webhook-sync', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjaW5ieHRrZHlkcmt5ZmxwaXVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4MzE4ODIsImV4cCI6MjA3MzQwNzg4Mn0.o0-LT81lQmFmSLV95RtDsYUtZbIBo4y-CPQr548iadU`
         },
-        mode: "no-cors",
         body: JSON.stringify({
+          trigger: 'custom_webhook',
           timestamp: new Date().toISOString(),
-          triggered_from: "ai_dashboard",
-          action: "manual_sync"
-        }),
+          source: 'custom_trigger',
+          custom_webhook_url: webhookUrl
+        })
       });
 
-      toast({
-        title: "Webhook Triggered!",
-        description: "n8n webhook has been called successfully.",
-        className: "neon-glow-cyan",
-      });
+      const result = await response.json();
+      
+      if (response.ok) {
+        toast({
+          title: "Webhook Triggered!",
+          description: "Custom webhook has been called successfully.",
+          className: "neon-glow-cyan",
+        });
+      } else {
+        throw new Error(result.error || 'Webhook trigger failed');
+      }
     } catch (error) {
+      console.error('Custom webhook error:', error);
       toast({
         title: "Webhook Failed",
-        description: "Could not trigger the webhook.",
+        description: "Could not trigger the custom webhook.",
         variant: "destructive",
       });
     } finally {

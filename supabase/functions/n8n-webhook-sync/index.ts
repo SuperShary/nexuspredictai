@@ -31,16 +31,24 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'User-Agent': 'Supabase-Edge-Function/1.0',
+        'Accept': 'application/json',
       },
       body: JSON.stringify({
         trigger: 'automated_sync',
         timestamp: new Date().toISOString(),
-        source: 'supabase_cron'
+        source: 'supabase_cron',
+        request_data: true
       })
     });
 
+    console.log('Webhook response status:', webhookResponse.status);
+    console.log('Webhook response headers:', Object.fromEntries(webhookResponse.headers.entries()));
+
     if (!webhookResponse.ok) {
-      throw new Error(`Webhook call failed: ${webhookResponse.status} ${webhookResponse.statusText}`);
+      const errorText = await webhookResponse.text();
+      console.error('Webhook error response:', errorText);
+      throw new Error(`Webhook call failed: ${webhookResponse.status} ${webhookResponse.statusText} - ${errorText}`);
     }
 
     const webhookData = await webhookResponse.json();
