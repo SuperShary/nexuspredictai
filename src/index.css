@@ -12,6 +12,8 @@
     --space-black: 240 20% 4%;  /* #0A0A0F */
     --space-dark: 240 15% 8%;   /* #12121A */
     --space-medium: 240 10% 15%; /* #212133 */
+    --space-light: 240 5% 96%;  /* #F8F9FA */
+    --space-white: 0 0% 100%;   /* #FFFFFF */
     
     /* Neon Accent Colors */
     --neon-cyan: 191 100% 50%;   /* #00D9FF */
@@ -43,8 +45,84 @@
     --glow-purple: 0 0 20px hsl(var(--neon-purple) / 0.5);
     --glow-success: 0 0 20px hsl(var(--emerald-green) / 0.5);
     --glow-danger: 0 0 20px hsl(var(--crimson-red) / 0.5);
+  }
+
+  /* Dark Theme (Default) */
+  .dark {
+    --background: var(--space-black);
+    --foreground: 240 100% 90%;
     
-    /* System Colors - AI Theme */
+    --card: var(--space-dark);
+    --card-foreground: 240 100% 90%;
+    
+    --popover: var(--space-medium);
+    --popover-foreground: 240 100% 90%;
+    
+    --primary: var(--neon-cyan);
+    --primary-foreground: var(--space-black);
+    
+    --secondary: var(--space-medium);
+    --secondary-foreground: 240 100% 90%;
+    
+    --muted: var(--space-medium);
+    --muted-foreground: 240 30% 70%;
+    
+    --accent: var(--neon-purple);
+    --accent-foreground: var(--space-black);
+    
+    --destructive: var(--crimson-red);
+    --destructive-foreground: 240 100% 90%;
+    
+    --border: 240 100% 90% / 0.1;
+    --input: var(--space-medium);
+    --ring: var(--neon-cyan);
+    
+    --glass-background: 240 20% 4% / 0.7;
+    --glass-border: 240 100% 90% / 0.1;
+    --glass-shadow: 0 8px 32px hsla(240, 20%, 4%, 0.37);
+    
+    --radius: 1rem;
+  }
+
+  /* Light Theme */
+  .light {
+    --background: var(--space-white);
+    --foreground: 240 15% 15%;
+    
+    --card: 240 5% 98%;
+    --card-foreground: 240 15% 15%;
+    
+    --popover: var(--space-white);
+    --popover-foreground: 240 15% 15%;
+    
+    --primary: 191 100% 40%;
+    --primary-foreground: var(--space-white);
+    
+    --secondary: 240 8% 92%;
+    --secondary-foreground: 240 15% 15%;
+    
+    --muted: 240 8% 94%;
+    --muted-foreground: 240 10% 45%;
+    
+    --accent: 280 70% 50%;
+    --accent-foreground: var(--space-white);
+    
+    --destructive: var(--crimson-red);
+    --destructive-foreground: var(--space-white);
+    
+    --border: 240 15% 85%;
+    --input: 240 8% 94%;
+    --ring: 191 100% 40%;
+    
+    --glass-background: 240 5% 98% / 0.85;
+    --glass-border: 240 15% 75% / 0.2;
+    --glass-shadow: 0 8px 32px hsla(240, 15%, 15%, 0.08);
+    
+    --radius: 1rem;
+  }
+
+  /* Root fallback */
+  :root {
     --background: var(--space-black);
     --foreground: 240 100% 90%;
     
@@ -86,14 +164,32 @@
     font-family: 'Inter', sans-serif;
   }
   
+  html.dark {
+    color-scheme: dark;
+  }
+  
+  html.light {
+    color-scheme: light;
+  }
+  
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-300;
+    min-height: 100vh;
+  }
+  
+  body.dark {
     background: 
       radial-gradient(circle at 20% 50%, hsl(var(--neon-cyan) / 0.05) 0%, transparent 50%),
       radial-gradient(circle at 80% 20%, hsl(var(--neon-purple) / 0.05) 0%, transparent 50%),
       radial-gradient(circle at 40% 80%, hsl(var(--emerald-green) / 0.03) 0%, transparent 50%),
       hsl(var(--background));
-    min-height: 100vh;
+  }
+  
+  body.light {
+    background: 
+      radial-gradient(circle at 20% 50%, hsl(var(--neon-cyan) / 0.02) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, hsl(var(--neon-purple) / 0.02) 0%, transparent 50%),
+      hsl(var(--background));
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -109,15 +205,17 @@
 @layer components {
   /* Glassmorphism Cards */
   .glass-card {
-    @apply bg-card/70 backdrop-blur-xl border border-white/10;
+    @apply backdrop-blur-xl border transition-colors duration-300;
+    background: hsla(var(--glass-background));
+    border-color: hsl(var(--glass-border));
     box-shadow: var(--glass-shadow);
   }
   
   .glass-panel {
-    @apply bg-card/50 backdrop-blur-2xl border border-white/5;
-    box-shadow: 
-      0 8px 32px hsla(240, 20%, 4%, 0.37),
-      inset 0 1px 0 hsla(240, 100%, 100%, 0.1);
+    @apply backdrop-blur-2xl border transition-colors duration-300;
+    background: hsla(var(--glass-background));
+    border-color: hsl(var(--glass-border));
+    box-shadow: var(--glass-shadow);
   }
   
   /* Neon Effects */
