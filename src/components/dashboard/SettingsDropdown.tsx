@@ -47,7 +47,8 @@ import {
   Sun,
   Monitor,
   Zap,
-  ExternalLink
+  ExternalLink,
+  Play
 } from "lucide-react";
 
 interface SettingsDropdownProps {
@@ -65,7 +66,7 @@ export const SettingsDropdown = ({
   const { theme, setTheme } = useTheme();
   const [showClearDialog, setShowClearDialog] = useState(false);
   const [showWebflowDialog, setShowWebflowDialog] = useState(false);
-  const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookUrl, setWebhookUrl] = useState("https://n8n.srv872880.hstgr.cloud/webhook-test/incomingdata");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleClearTable = () => {
@@ -142,31 +143,38 @@ export const SettingsDropdown = ({
     console.log("Triggering Webflow webhook:", webhookUrl);
 
     try {
-      const response = await fetch(webhookUrl, {
-        method: "POST",
+      // Use the same robust webhook routing as N8nIntegration
+      const response = await fetch('https://zcinbxtkdydrkyflpiui.supabase.co/functions/v1/n8n-webhook-sync', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjaW5ieHRrZHlkcmt5ZmxwaXVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4MzE4ODIsImV4cCI6MjA3MzQwNzg4Mn0.o0-LT81lQmFmSLV95RtDsYUtZbIBo4y-CPQr548iadU`
         },
-        mode: "no-cors",
         body: JSON.stringify({
+          trigger: 'webflow_webhook',
           timestamp: new Date().toISOString(),
-          triggered_from: window.location.origin,
-          source: "Nexus Predict AI",
-        }),
+          source: 'settings_trigger',
+          custom_webhook_url: webhookUrl
+        })
       });
 
-      toast({
-        title: "Webflow Triggered",
-        description: "The request was sent to Webflow. Check your site for updates.",
-        className: "neon-glow-success",
-      });
-      setShowWebflowDialog(false);
-      setWebhookUrl("");
+      const result = await response.json();
+      
+      if (response.ok) {
+        toast({
+          title: "Webflow Triggered!",
+          description: "Webhook has been called successfully.",
+          className: "neon-glow-success",
+        });
+        setShowWebflowDialog(false);
+      } else {
+        throw new Error(result.error || 'Webhook trigger failed');
+      }
     } catch (error) {
       console.error("Error triggering webhook:", error);
       toast({
-        title: "Error",
-        description: "Failed to trigger the Webflow webhook. Please check the URL and try again.",
+        title: "Webhook Failed",
+        description: "Could not trigger the webhook. Please check the URL and try again.",
         variant: "destructive",
       });
     } finally {
@@ -230,7 +238,7 @@ export const SettingsDropdown = ({
             className="flex items-center space-x-3 cursor-pointer hover:bg-accent/20"
           >
             <Zap className="w-4 h-4 text-ai-primary" />
-            <span>Trigger Webflow</span>
+            <span>Test Webflow</span>
           </DropdownMenuItem>
           
           {/* Import/Export */}
@@ -343,7 +351,7 @@ export const SettingsDropdown = ({
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
               <Zap className="w-5 h-5 text-primary" />
-              <span>Trigger Webflow</span>
+              <span>Test Webflow Webhook</span>
             </DialogTitle>
             <DialogDescription>
               Enter your Webflow webhook URL to trigger site updates or automations.
@@ -355,10 +363,10 @@ export const SettingsDropdown = ({
               <Input
                 id="webhook-url"
                 type="url"
-                placeholder="https://hooks.webflow.com/..."
+                placeholder="https://n8n.srv872880.hstgr.cloud/webhook-test/incomingdata"
                 value={webhookUrl}
                 onChange={(e) => setWebhookUrl(e.target.value)}
-                className="glass-panel"
+                className="glass-panel border-primary/20"
                 required
               />
             </div>
@@ -373,18 +381,18 @@ export const SettingsDropdown = ({
               </Button>
               <Button 
                 type="submit" 
-                disabled={isLoading}
-                className="gradient-primary"
+                disabled={isLoading || !webhookUrl}
+                className="w-full gradient-success hover:scale-105 transition-transform"
               >
                 {isLoading ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                     Triggering...
                   </>
                 ) : (
                   <>
                     <ExternalLink className="w-4 h-4 mr-2" />
-                    Trigger Webflow
+                    Trigger Webhook
                   </>
                 )}
               </Button>
