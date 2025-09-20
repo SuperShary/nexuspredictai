@@ -419,6 +419,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      sync_n8n_webhook_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "teacher" | "mentor" | "parent" | "student"

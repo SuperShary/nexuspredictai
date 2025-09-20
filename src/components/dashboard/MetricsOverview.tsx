@@ -60,12 +60,12 @@ export const MetricsOverview = ({ students }: MetricsOverviewProps) => {
       glow: avgRiskScore > 50 ? "neon-glow-danger" : "neon-glow-success"
     },
     {
-      title: "Intervention Success",
-      value: "87.3%",
-      change: "+5.2% this quarter",
+      title: "Average Dropout Risk",
+      value: `${avgDropoutProb.toFixed(1)}%`,
+      change: avgDropoutProb > 30 ? "Above threshold" : "Within acceptable range",
       icon: TrendingUp,
-      gradient: "gradient-success",
-      glow: "neon-glow-success"
+      gradient: avgDropoutProb > 30 ? "gradient-danger" : "gradient-success",
+      glow: avgDropoutProb > 30 ? "neon-glow-danger" : "neon-glow-success"
     }
   ];
 

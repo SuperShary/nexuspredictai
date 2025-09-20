@@ -122,18 +122,36 @@ export const N8nIntegration = () => {
     setIsTriggering(true);
     
     try {
-      // Simulate API call to n8n
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast({
-        title: "Sync Triggered!",
-        description: "n8n workflows have been triggered successfully.",
-        className: "neon-glow-cyan",
+      // Call the actual n8n webhook sync function
+      const response = await fetch('https://zcinbxtkdydrkyflpiui.supabase.co/functions/v1/n8n-webhook-sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjaW5ieHRrZHlkcmt5ZmxwaXVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4MzE4ODIsImV4cCI6MjA3MzQwNzg4Mn0.o0-LT81lQmFmSLV95RtDsYUtZbIBo4y-CPQr548iadU`
+        },
+        body: JSON.stringify({
+          trigger: 'manual',
+          timestamp: new Date().toISOString(),
+          source: 'dashboard'
+        })
       });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        toast({
+          title: "Sync Triggered!",
+          description: `Data sync completed: ${result.summary?.studentsUpdated || 0} students, ${result.summary?.attendanceRecordsUpdated || 0} attendance records, ${result.summary?.academicRecordsUpdated || 0} academic records updated.`,
+          className: "neon-glow-cyan",
+        });
+      } else {
+        throw new Error(result.error || 'Sync failed');
+      }
     } catch (error) {
+      console.error('Sync error:', error);
       toast({
         title: "Sync Failed",
-        description: "Could not trigger n8n workflows.",
+        description: "Could not trigger n8n workflows. Check console for details.",
         variant: "destructive",
       });
     } finally {
@@ -295,13 +313,13 @@ export const N8nIntegration = () => {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="webhook-url">n8n Webhook URL</Label>
-            <Input
-              id="webhook-url"
-              placeholder="https://your-n8n-instance.com/webhook/..."
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
-              className="glass-panel border-primary/20"
-            />
+          <Input
+            id="webhook-url"
+            placeholder="https://n8n.srv872880.hstgr.cloud/webhook-test/incomingdata"
+            value={webhookUrl}
+            onChange={(e) => setWebhookUrl(e.target.value)}
+            className="glass-panel border-primary/20"
+          />
           </div>
           
           <Button 
