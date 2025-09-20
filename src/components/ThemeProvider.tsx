@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import * as React from "react";
 
 type Theme = "dark" | "light" | "system";
 
@@ -18,7 +18,7 @@ const initialState: ThemeProviderState = {
   setTheme: () => null,
 };
 
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
+const ThemeProviderContext = React.createContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({
   children,
@@ -26,17 +26,30 @@ export function ThemeProvider({
   storageKey = "nexus-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === "undefined") return defaultTheme;
-    return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+  const [theme, setTheme] = React.useState<Theme>(() => {
+    // Always return defaultTheme initially to avoid hydration issues
+    return defaultTheme;
   });
 
-  useEffect(() => {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    // Set mounted to true after component mounts
+    setMounted(true);
+    
+    // Get theme from localStorage after mount
+    const storedTheme = localStorage.getItem(storageKey) as Theme;
+    if (storedTheme) {
+      setTheme(storedTheme);
+    }
+  }, [storageKey]);
+
+  React.useEffect(() => {
+    if (!mounted) return;
+
     const root = window.document.documentElement;
-    const body = window.document.body;
 
     root.classList.remove("light", "dark");
-    body.classList.remove("light", "dark");
 
     if (theme === "system") {
       const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
@@ -45,23 +58,11 @@ export function ThemeProvider({
         : "light";
 
       root.classList.add(systemTheme);
-      body.classList.add(systemTheme);
       return;
     }
 
     root.classList.add(theme);
-    body.classList.add(theme);
-  }, [theme]);
-
-  // Set initial theme to dark if nothing is stored
-  useEffect(() => {
-    if (!localStorage.getItem(storageKey)) {
-      const root = window.document.documentElement;
-      const body = window.document.body;
-      root.classList.add("dark");
-      body.classList.add("dark");
-    }
-  }, [storageKey]);
+  }, [theme, mounted]);
 
   const value = {
     theme,
@@ -79,7 +80,7 @@ export function ThemeProvider({
 }
 
 export const useTheme = () => {
-  const context = useContext(ThemeProviderContext);
+  const context = React.useContext(ThemeProviderContext);
 
   if (context === undefined)
     throw new Error("useTheme must be used within a ThemeProvider");

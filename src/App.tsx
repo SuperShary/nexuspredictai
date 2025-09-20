@@ -11,8 +11,8 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="dark" storageKey="nexus-ui-theme">
-      <TooltipProvider>
+    <TooltipProvider>
+      <ThemeProvider defaultTheme="dark" storageKey="nexus-ui-theme">
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -22,8 +22,8 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
+      </ThemeProvider>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 
