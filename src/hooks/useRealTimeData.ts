@@ -36,16 +36,7 @@ export const useRealTimeData = (): RealTimeDataHook => {
       ] = await Promise.all([
         supabase
           .from('students')
-          .select(`
-            *,
-            profiles:user_id (
-              id,
-              user_id,
-              first_name,
-              last_name,
-              avatar_url
-            )
-          `)
+          .select('*')
           .order('risk_score', { ascending: false }),
         
         supabase

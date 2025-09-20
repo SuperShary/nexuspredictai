@@ -207,22 +207,40 @@ serve(async (req) => {
     let academicRecordsUpdated = 0;
     let feeRecordsUpdated = 0;
 
-    // Process students data if present
+    // Process students data - handle both direct array and nested structure
+    let studentsData = null;
     if (webhookData.students && Array.isArray(webhookData.students)) {
-      console.log(`Processing ${webhookData.students.length} student records`);
+      studentsData = webhookData.students;
+    } else if (Array.isArray(webhookData)) {
+      studentsData = webhookData;
+    }
+
+    if (studentsData) {
+      console.log(`Processing ${studentsData.length} student records`);
       
-      for (const studentData of webhookData.students) {
+      for (const studentData of studentsData) {
+        // Map webhook field names to database schema
+        const studentId = studentData.Student_name || studentData.student_name || studentData.student_id;
+        const riskLevel = studentData.Risk_level?.toLowerCase() || studentData.risk_level || 'safe';
+        const riskScore = parseFloat(studentData.Risk_score || studentData.risk_score || '0');
+        const attendancePercent = parseFloat(studentData['attendance%'] || studentData.attendance || '95');
+        const avgScore = parseFloat(studentData.avg_score || studentData.average_score || '75');
+        const feeStatus = studentData.fee_status || 'paid';
+
+        // Calculate dropout probability based on risk score
+        const dropoutProb = riskScore > 70 ? riskScore * 0.8 : riskScore * 0.5;
+
         // Upsert student data
         const { error: studentError } = await supabase
           .from('students')
           .upsert({
-            student_id: studentData.student_id,
-            grade_level: studentData.grade_level,
-            section: studentData.section,
+            student_id: studentId,
+            grade_level: studentData.grade_level || '10',
+            section: studentData.section || 'A',
             enrollment_date: studentData.enrollment_date || new Date().toISOString().split('T')[0],
-            risk_score: studentData.risk_score || 0,
-            risk_level: studentData.risk_level || 'safe',
-            dropout_probability: studentData.dropout_probability || 0,
+            risk_score: riskScore,
+            risk_level: riskLevel === 'low' ? 'safe' : riskLevel === 'medium' ? 'caution' : riskLevel === 'high' ? 'high_risk' : riskLevel,
+            dropout_probability: dropoutProb,
             last_risk_calculation: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }, {
@@ -233,6 +251,61 @@ serve(async (req) => {
           console.error('Error upserting student:', studentError);
         } else {
           studentsUpdated++;
+
+          // Also create attendance and academic records if we have the data
+          const { data: student } = await supabase
+            .from('students')
+            .select('id')
+            .eq('student_id', studentId)
+            .single();
+
+          if (student) {
+            // Create attendance record
+            await supabase
+              .from('attendance')
+              .upsert({
+                student_id: student.id,
+                date: new Date().toISOString().split('T')[0],
+                status: attendancePercent > 80 ? 'present' : 'absent',
+                remarks: `Attendance: ${attendancePercent}%`,
+                created_at: new Date().toISOString()
+              }, {
+                onConflict: 'student_id,date'
+              });
+
+            // Create academic performance record
+            await supabase
+              .from('academic_performance')
+              .insert({
+                student_id: student.id,
+                subject: 'Overall',
+                test_type: 'Assessment',
+                test_date: new Date().toISOString().split('T')[0],
+                score: avgScore,
+                max_score: 100,
+                percentage: avgScore,
+                grade: avgScore >= 90 ? 'A' : avgScore >= 80 ? 'B' : avgScore >= 70 ? 'C' : avgScore >= 60 ? 'D' : 'F',
+                created_at: new Date().toISOString()
+              })
+              .then(() => academicRecordsUpdated++);
+
+            // Create fee record
+            await supabase
+              .from('fee_records')
+              .upsert({
+                student_id: student.id,
+                fee_type: 'Tuition',
+                amount: 1000,
+                due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                status: feeStatus === 'paid' ? 'paid' : 'pending',
+                paid_date: feeStatus === 'paid' ? new Date().toISOString().split('T')[0] : null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }, {
+                onConflict: 'student_id,fee_type,due_date'
+              })
+              .then(() => feeRecordsUpdated++);
+          }
         }
       }
     }
