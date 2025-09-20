@@ -83,8 +83,9 @@ const mockDataSources = [
 
 export const N8nIntegration = () => {
   const { toast } = useToast();
-  const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookUrl, setWebhookUrl] = useState("https://n8n.srv872880.hstgr.cloud/webhook-test/incomingdata");
   const [isTriggering, setIsTriggering] = useState(false);
+  const [isTestingWebhook, setIsTestingWebhook] = useState(false);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -156,6 +157,57 @@ export const N8nIntegration = () => {
       });
     } finally {
       setIsTriggering(false);
+    }
+  };
+
+  const handleTestWebhook = async () => {
+    setIsTestingWebhook(true);
+    
+    try {
+      const response = await fetch("https://n8n.srv872880.hstgr.cloud/webhook-test/incomingdata", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        mode: "no-cors",
+        body: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          triggered_from: "manual_test",
+          action: "test_workflow",
+          test_data: {
+            students: [
+              {
+                student_id: "TEST001",
+                grade_level: "10",
+                section: "A",
+                risk_score: 75,
+                risk_level: "caution"
+              }
+            ],
+            attendance: [
+              {
+                student_id: "TEST001",
+                date: new Date().toISOString().split('T')[0],
+                status: "present"
+              }
+            ]
+          }
+        }),
+      });
+
+      toast({
+        title: "Test Webhook Sent!",
+        description: "Check your n8n workflow to see if it received the test data.",
+        className: "neon-glow-cyan",
+      });
+    } catch (error) {
+      toast({
+        title: "Test Failed",
+        description: "Could not send test webhook. Check console for details.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTestingWebhook(false);
     }
   };
 
@@ -244,18 +296,33 @@ export const N8nIntegration = () => {
             </div>
           ))}
           
-          <Button 
-            onClick={handleTriggerSync}
-            disabled={isTriggering}
-            className="w-full trigger-sync-btn gradient-primary hover:scale-105 transition-transform"
-          >
-            {isTriggering ? (
-              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Zap className="w-4 h-4 mr-2" />
-            )}
-            {isTriggering ? "Syncing..." : "🔄 Sync Now"}
-          </Button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Button 
+              onClick={handleTriggerSync}
+              disabled={isTriggering}
+              className="trigger-sync-btn gradient-primary hover:scale-105 transition-transform"
+            >
+              {isTriggering ? (
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Zap className="w-4 h-4 mr-2" />
+              )}
+              {isTriggering ? "Syncing..." : "🔄 Sync Now"}
+            </Button>
+            
+            <Button 
+              onClick={handleTestWebhook}
+              disabled={isTestingWebhook}
+              className="gradient-danger hover:scale-105 transition-transform"
+            >
+              {isTestingWebhook ? (
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Play className="w-4 h-4 mr-2" />
+              )}
+              {isTestingWebhook ? "Testing..." : "🧪 Test Webhook"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
