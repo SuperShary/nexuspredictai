@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, forwardRef, useImperativeHandle } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -32,11 +32,26 @@ interface StudentTableProps {
   students: Student[];
 }
 
-export const StudentTable = ({ students }: StudentTableProps) => {
+interface StudentTableRef {
+  resetFilters: () => void;
+  exportData: () => void;
+}
+
+export const StudentTable = forwardRef<StudentTableRef, StudentTableProps>(({ students }, ref) => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [gradeFilter, setGradeFilter] = useState("all");
   const [riskFilter, setRiskFilter] = useState("all");
+
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    resetFilters: () => {
+      setSearchTerm("");
+      setGradeFilter("all");
+      setRiskFilter("all");
+    },
+    exportData: handleExportCSV
+  }));
 
   // Mock data for attendance and scores (would come from database)
   const getStudentStats = (studentId: string) => {
@@ -284,4 +299,6 @@ export const StudentTable = ({ students }: StudentTableProps) => {
       </CardContent>
     </Card>
   );
-};
+});
+
+StudentTable.displayName = "StudentTable";

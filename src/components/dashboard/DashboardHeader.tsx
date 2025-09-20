@@ -6,13 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Brain, 
-  Settings, 
   Bell, 
   LogOut, 
   Shield,
   Zap,
   Activity
 } from "lucide-react";
+import { SettingsDropdown } from "./SettingsDropdown";
 
 interface Profile {
   id: string;
@@ -26,9 +26,18 @@ interface Profile {
 interface DashboardHeaderProps {
   user: User;
   profile: Profile | null;
+  onClearTable?: () => void;
+  onResetFilters?: () => void;
+  onExportData?: () => void;
 }
 
-export const DashboardHeader = ({ user, profile }: DashboardHeaderProps) => {
+export const DashboardHeader = ({ 
+  user, 
+  profile, 
+  onClearTable, 
+  onResetFilters, 
+  onExportData 
+}: DashboardHeaderProps) => {
   const { toast } = useToast();
 
   const handleSignOut = async () => {
@@ -102,13 +111,11 @@ export const DashboardHeader = ({ user, profile }: DashboardHeaderProps) => {
               <div className="absolute top-1 right-1 w-2 h-2 bg-crimson-red rounded-full animate-pulse"></div>
             </Button>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="glass-panel hover:neon-glow-purple"
-            >
-              <Settings className="w-5 h-5" />
-            </Button>
+            <SettingsDropdown 
+              onClearTable={onClearTable}
+              onResetFilters={onResetFilters}
+              onExportData={onExportData}
+            />
 
             <div className="flex items-center space-x-3 glass-panel px-3 py-2 rounded-lg">
               <Avatar className="w-8 h-8">

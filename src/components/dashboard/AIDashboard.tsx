@@ -1,7 +1,8 @@
 import { User } from "@supabase/supabase-js";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealTimeData } from "@/hooks/useRealTimeData";
+import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "./DashboardHeader";
 import { MetricsOverview } from "./MetricsOverview";
 import { StudentTable } from "./StudentTable";
@@ -40,6 +41,8 @@ export const AIDashboard = ({ user }: AIDashboardProps) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const { students, loading: dataLoading, error: dataError } = useRealTimeData();
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const studentTableRef = useRef<{ resetFilters: () => void; exportData: () => void } | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -64,6 +67,45 @@ export const AIDashboard = ({ user }: AIDashboardProps) => {
     fetchProfile();
   }, [user.id]);
 
+  // Settings callback functions
+  const handleClearTable = async () => {
+    try {
+      // Clear all student data from the database
+      const { error } = await supabase
+        .from('students')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Table Cleared",
+        description: "All student data has been cleared from the database.",
+        className: "neon-glow-success",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to clear table data. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleResetFilters = () => {
+    if (studentTableRef.current?.resetFilters) {
+      studentTableRef.current.resetFilters();
+    }
+  };
+
+  const handleExportData = () => {
+    if (studentTableRef.current?.exportData) {
+      studentTableRef.current.exportData();
+    }
+  };
+
   if (loading || dataLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -77,14 +119,20 @@ export const AIDashboard = ({ user }: AIDashboardProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader user={user} profile={profile} />
+      <DashboardHeader 
+        user={user} 
+        profile={profile}
+        onClearTable={handleClearTable}
+        onResetFilters={handleResetFilters}
+        onExportData={handleExportData}
+      />
       
       <main className="container mx-auto px-6 py-8 space-y-8">
         {/* Top Section - Overview Stats */}
         <MetricsOverview students={students} />
         
         {/* Main Section - Student Table */}
-        <StudentTable students={students} />
+        <StudentTable ref={studentTableRef} students={students} />
         
         {/* Grid Layout for Additional Features */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
