@@ -1,6 +1,86 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { calculateStudentRisk } from '../../../src/utils/riskCalculation.ts';
+
+// Risk calculation logic (copied from utils to avoid import issues)
+interface StudentData {
+  attendance: number;
+  averageScore: number;
+  feeStatus: 'paid' | 'unpaid';
+  failedAttempts: number;
+}
+
+interface RiskResult {
+  score: number;
+  level: 'safe' | 'caution' | 'high_risk';
+  breakdown: Record<string, number>;
+  recommendation: string;
+}
+
+const calculateStudentRisk = (student: StudentData): RiskResult => {
+  const riskFactors = {
+    attendance: {
+      weight: 0.35,
+      value: student.attendance,
+      threshold: { high: 60, medium: 75, safe: 85 }
+    },
+    academics: {
+      weight: 0.30,
+      value: student.averageScore,
+      threshold: { high: 40, medium: 55, safe: 65 }
+    },
+    fees: {
+      weight: 0.20,
+      value: student.feeStatus === 'paid' ? 100 : 0,
+      threshold: { high: 0, medium: 50, safe: 100 }
+    },
+    attempts: {
+      weight: 0.15,
+      value: Math.max(0, 100 - (student.failedAttempts * 20)),
+      threshold: { high: 40, medium: 60, safe: 80 }
+    }
+  };
+
+  // Calculate weighted score
+  let totalScore = 0;
+  let breakdown: Record<string, number> = {};
+  
+  Object.keys(riskFactors).forEach(factor => {
+    const f = riskFactors[factor as keyof typeof riskFactors];
+    const score = (f.value / 100) * f.weight * 100;
+    totalScore += score;
+    breakdown[factor] = score;
+  });
+
+  // Determine risk level
+  let riskLevel: 'safe' | 'caution' | 'high_risk';
+  if (totalScore < 45) {
+    riskLevel = 'high_risk';
+  } else if (totalScore < 65) {
+    riskLevel = 'caution';
+  } else {
+    riskLevel = 'safe';
+  }
+
+  const generateRecommendation = (level: string): string => {
+    switch (level) {
+      case 'high_risk':
+        return 'URGENT: Immediate intervention required. Schedule counseling session and parent meeting within 48 hours.';
+      case 'caution':
+        return 'ATTENTION NEEDED: Monitor closely and provide targeted support. Consider mentorship program.';
+      case 'safe':
+        return 'GOOD STANDING: Student is performing well. Continue regular monitoring.';
+      default:
+        return 'Assessment needed.';
+    }
+  };
+
+  return {
+    score: totalScore,
+    level: riskLevel,
+    breakdown,
+    recommendation: generateRecommendation(riskLevel)
+  };
+};
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -245,7 +325,7 @@ serve(async (req) => {
         const riskResult = calculateStudentRisk({
           attendance: attendanceRate,
           averageScore: averageScore,
-          feeStatus: feeStatus,
+          feeStatus: feeStatus as 'paid' | 'unpaid',
           failedAttempts: 0 // Default for now
         });
 
