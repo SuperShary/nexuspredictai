@@ -37,7 +37,7 @@ interface AlertItem {
 const mockRecentAlerts: AlertItem[] = [
   {
     id: '1',
-    student: 'Rahul Sharma (2025001)',
+    student: 'STU005 (High Risk)',
     recipient: 'Parent: +91-98765xxxxx',
     time: '2 hours ago',
     status: 'delivered',
@@ -45,7 +45,7 @@ const mockRecentAlerts: AlertItem[] = [
   },
   {
     id: '2',
-    student: 'Neha Gupta (2025003)',
+    student: 'STU010 (High Risk)',
     recipient: 'Mentor: teacher@school.edu',
     time: '4 hours ago',
     status: 'delivered',
@@ -53,12 +53,28 @@ const mockRecentAlerts: AlertItem[] = [
   },
   {
     id: '3',
-    student: 'Aarav Kumar (2025004)',
+    student: 'STU014 (High Risk)',
     recipient: 'Parent: +91-98765yyyyy',
     time: '6 hours ago',
-    status: 'pending',
+    status: 'delivered',
     channel: 'sms'
   },
+  {
+    id: '4',
+    student: 'STU025 (High Risk)',
+    recipient: 'Parent: +91-98765zzzzz',
+    time: '8 hours ago',
+    status: 'delivered',
+    channel: 'whatsapp'
+  },
+  {
+    id: '5',
+    student: 'STU031 (High Risk)',
+    recipient: 'Counselor: support@school.edu',
+    time: '1 day ago',
+    status: 'delivered',
+    channel: 'email'
+  }
 ];
 
 export const NotificationManager = () => {

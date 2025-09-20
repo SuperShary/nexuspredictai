@@ -10,23 +10,27 @@ interface AIInsightsProps {
 }
 
 export const AIInsights = ({ students }: AIInsightsProps) => {
+  const highRiskCount = students.filter(s => s.risk_level === 'high_risk').length;
+  const cautionCount = students.filter(s => s.risk_level === 'caution').length;
+  const totalStudents = students.length;
+  
   const insights = [
     {
       icon: Brain,
       title: "Predictive Analysis",
-      description: "AI identifies 3 students requiring immediate intervention",
+      description: `AI identifies ${highRiskCount} students requiring immediate intervention`,
       priority: "high"
     },
     {
       icon: TrendingUp,
       title: "Trend Detection", 
-      description: "Attendance patterns suggest improving engagement",
+      description: `${cautionCount} students showing early warning signs`,
       priority: "medium"
     },
     {
       icon: Zap,
       title: "Intervention Suggestion",
-      description: "Personalized mentoring recommended for 5 students",
+      description: `${Math.min(totalStudents, highRiskCount + cautionCount)} students recommended for personalized mentoring`,
       priority: "low"
     }
   ];
